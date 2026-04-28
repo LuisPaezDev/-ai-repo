@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRepo — Mi Base de Conocimiento IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+/* ── VARIABLES ─────────────────────────────────────────── */
+:root {
+  --bg: #09090e;
+  --surface: #111116;
+  --surface2: #17171f;
+  --surface3: #1e1e28;
+  --border: #252532;
+  --border2: #32324a;
+  --accent: #818cf8;
+  --accent-dim: rgba(129,140,248,0.12);
+  --accent-border: rgba(129,140,248,0.28);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.1);
+  --rose: #fb7185;
+  --rose-dim: rgba(251,113,133,0.1);
+  --amber: #fbbf24;
+  --amber-dim: rgba(251,191,36,0.1);
+  --sky: #38bdf8;
+  --sky-dim: rgba(56,189,248,0.1);
+  --violet: #a78bfa;
+  --text: #e2e2f0;
+  --text-dim: #9090b0;
+  --text-faint: #4a4a68;
+  --radius: 10px;
+  --sidebar-w: 260px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grain texture */
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0; opacity:0.4;
+}
+
+/* Ambient glows */
+.glow-1 {
+  position:fixed; top:-20%; left:-10%;
+  width:55%; height:55%;
+  background: radial-gradient(ellipse, rgba(129,140,248,0.06) 0%, transparent 65%);
+  pointer-events:none; z-index:0;
+}
+.glow-2 {
+  position:fixed; bottom:-15%; right:-5%;
+  width:45%; height:45%;
+  background: radial-gradient(ellipse, rgba(52,211,153,0.04) 0%, transparent 65%);
+  pointer-events:none; z-index:0;
+}
+
+/* ── LAYOUT ────────────────────────────────────────────── */
+html, body { height:100%; }
+#app { position:relative; z-index:1; display:flex; flex-direction:column; height:100%; min-height:100vh; }
+
+/* ── HEADER ────────────────────────────────────────────── */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 1.4rem 2rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(9,9,14,0.85);
+  backdrop-filter: blur(16px);
+  position: sticky; top:0; z-index:50;
+}
+
+.logo {
+  display:flex; align-items:baseline; gap:0.3rem;
+}
+.logo-mark {
+  font-family:'Syne', sans-serif; font-size:1.5rem; font-weight:800;
+  letter-spacing:-0.04em; color:var(--text);
+}
+.logo-mark span { color:var(--accent); }
+.logo-sub {
+  font-size:0.62rem; color:var(--text-faint);
+  text-transform:uppercase; letter-spacing:0.12em;
+  margin-left:0.5rem;
+}
+
+.header-right { display:flex; align-items:center; gap:1rem; }
+
+.stat-chip {
+  display:flex; align-items:center; gap:0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--surface2); border:1px solid var(--border);
+  border-radius:20px; font-size:0.68rem; color:var(--text-dim);
+}
+.stat-chip strong { color:var(--accent); font-size:0.8rem; }
+
+.btn-add {
+  display:flex; align-items:center; gap:0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent); border:none; border-radius:8px;
+  color: #09090e; font-family:'Syne', sans-serif;
+  font-size:0.78rem; font-weight:700; cursor:pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-add:hover { opacity:0.9; transform:translateY(-1px); }
+
+/* ── BODY LAYOUT ───────────────────────────────────────── */
+.body-wrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── SIDEBAR ───────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  height: calc(100vh - 61px);
+  position: sticky;
+  top: 61px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.sidebar::-webkit-scrollbar { width:2px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.sb-section { margin-bottom:1.25rem; }
+.sb-label {
+  font-size:0.58rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.18em; color:var(--text-faint);
+  padding: 0 0.5rem; margin-bottom:0.4rem;
+}
+
+.sb-btn {
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; padding: 0.42rem 0.6rem;
+  border:none; border-radius:7px; background:transparent;
+  color:var(--text-dim); font-family:'DM Mono', monospace;
+  font-size:0.73rem; cursor:pointer; text-align:left;
+  transition: background 0.12s, color 0.12s;
+  gap:0.3rem;
+}
+.sb-btn:hover { background:var(--surface2); color:var(--text); }
+.sb-btn.active { background:var(--accent-dim); color:var(--accent); }
+
+.sb-btn-inner { display:flex; align-items:center; gap:0.45rem; flex:1; min-width:0; }
+.sb-icon { font-size:0.75rem; flex-shrink:0; width:14px; text-align:center; }
+.sb-count {
+  font-size:0.6rem; padding:1px 6px;
+  background:var(--surface3); border-radius:10px;
+  color:var(--text-faint); flex-shrink:0;
+}
+.sb-btn.active .sb-count { background:rgba(129,140,248,0.2); color:var(--accent); }
+
+.sb-chevron { font-size:0.55rem; color:var(--text-faint); transition:transform 0.2s; flex-shrink:0; }
+.sb-btn.expanded .sb-chevron { transform:rotate(90deg); }
+
+.subtree { display:none; padding-left:1.1rem; }
+.subtree.open { display:block; }
+.subtree .sb-btn { font-size:0.7rem; }
+.subtree .sb-btn.active { color:var(--green); background:var(--green-dim); }
+.subtree .sb-btn.active .sb-count { background:rgba(52,211,153,0.2); color:var(--green); }
+
+.sb-divider { height:1px; background:var(--border); margin:0.75rem 0; }
+
+/* ── MAIN ──────────────────────────────────────────────── */
+.main { flex:1; min-width:0; padding: 1.75rem 2rem; display:flex; flex-direction:column; gap:1.25rem; overflow-y:auto; }
+
+/* Search */
+.search-wrap { position:relative; }
+.search-ico {
+  position:absolute; left:1rem; top:50%; transform:translateY(-50%);
+  color:var(--text-faint); font-size:1rem; pointer-events:none;
+}
+.search-input {
+  width:100%; padding: 0.85rem 1rem 0.85rem 2.8rem;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--text);
+  font-family:'DM Mono', monospace; font-size:0.83rem;
+  outline:none; transition:border-color 0.15s;
+}
+.search-input:focus { border-color:var(--accent); }
+.search-input::placeholder { color:var(--text-faint); }
+.search-clear {
+  position:absolute; right:1rem; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--text-faint);
+  font-size:0.85rem; cursor:pointer; display:none;
+}
+
+/* Toolbar */
+.toolbar {
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  flex-wrap:wrap;
+}
+.results-info { font-size:0.7rem; color:var(--text-dim); }
+.results-info strong { color:var(--text); }
+
+.toolbar-right { display:flex; align-items:center; gap:0.6rem; }
+
+.sort-select {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; color:var(--text-dim);
+  font-family:'DM Mono', monospace; font-size:0.7rem;
+  padding:0.38rem 0.7rem; outline:none; cursor:pointer;
+}
+
+.view-toggle {
+  display:flex; gap:2px; background:var(--surface);
+  border:1px solid var(--border); border-radius:8px; padding:3px;
+}
+.view-btn {
+  padding:0.3rem 0.65rem; border-radius:5px; border:none;
+  background:transparent; color:var(--text-dim);
+  font-size:0.72rem; font-family:'DM Mono', monospace;
+  cursor:pointer; transition:all 0.12s;
+}
+.view-btn.active { background:var(--accent); color:var(--bg); }
+
+/* Active pills */
+.pills-bar {
+  display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center;
+  min-height:0;
+}
+.pills-bar:empty { display:none; }
+.pill {
+  display:flex; align-items:center; gap:0.35rem;
+  padding: 0.25rem 0.65rem;
+  background:var(--accent-dim); border:1px solid var(--accent-border);
+  border-radius:20px; font-size:0.67rem; color:var(--accent);
+  cursor:pointer; transition:background 0.12s;
+}
+.pill:hover { background:rgba(129,140,248,0.2); }
+.pill-x { font-size:0.6rem; opacity:0.6; }
+.pill-clear {
+  font-size:0.65rem; color:var(--text-faint); cursor:pointer;
+  text-decoration:underline; padding:0.2rem 0.3rem;
+}
+.pill-clear:hover { color:var(--rose); }
+
+/* Cards */
+.cards-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+  gap:0.9rem;
+}
+.cards-list { display:flex; flex-direction:column; gap:0.5rem; }
+.cards-list.hidden, .cards-grid.hidden { display:none; }
+
+/* Card */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:1.1rem 1.2rem;
+  cursor:pointer; transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+  position:relative; overflow:hidden;
+  animation: fadeIn 0.25s ease both;
+}
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(6px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.card::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:1.5px;
+  background:linear-gradient(90deg, var(--accent), var(--green));
+  opacity:0; transition:opacity 0.18s;
+}
+.card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 10px 35px rgba(0,0,0,0.35); }
+.card:hover::after { opacity:1; }
+
+.card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.55rem; gap:0.5rem; }
+.type-badge {
+  font-size:0.58rem; text-transform:uppercase; letter-spacing:0.1em;
+  padding:2px 8px; border-radius:4px; flex-shrink:0; font-weight:600;
+}
+.card-stars { font-size:0.6rem; color:var(--amber); letter-spacing:-1px; flex-shrink:0; }
+
+.card-title {
+  font-family:'Syne', sans-serif; font-size:0.86rem; font-weight:600;
+  line-height:1.38; color:var(--text); margin-bottom:0.4rem;
+}
+.card-summary {
+  font-family:'Fraunces', serif; font-style:italic; font-weight:300;
+  font-size:0.71rem; color:var(--text-dim); line-height:1.55;
+  margin-bottom:0.75rem;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+}
+
+.card-tags { display:flex; flex-wrap:wrap; gap:0.35rem; align-items:center; }
+
+.tag {
+  font-size:0.6rem; padding:2px 7px; border-radius:20px;
+  border:1px solid var(--border); background:var(--surface3); color:var(--text-dim);
+}
+.tag.tool { background:var(--accent-dim); color:var(--accent); border-color:var(--accent-border); }
+.tag.modal { background:var(--green-dim); color:var(--green); border-color:rgba(52,211,153,0.25); }
+.tag.featured { background:var(--amber-dim); color:var(--amber); border-color:rgba(251,191,36,0.25); }
+.tag.lang { background:var(--sky-dim); color:var(--sky); border-color:rgba(56,189,248,0.2); }
+
+.card-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:0.75rem; padding-top:0.65rem;
+  border-top:1px solid var(--border);
+}
+.card-meta-small { font-size:0.6rem; color:var(--text-faint); }
+.card-link {
+  font-size:0.65rem; color:var(--accent); text-decoration:none;
+  opacity:0.7; transition:opacity 0.12s; display:flex; align-items:center; gap:0.2rem;
+}
+.card-link:hover { opacity:1; }
+
+/* List card */
+.list-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:9px; padding:0.75rem 1rem;
+  cursor:pointer; display:flex; align-items:center; gap:1rem;
+  transition: border-color 0.15s;
+}
+.list-card:hover { border-color:var(--border2); }
+.list-card-main { flex:1; min-width:0; }
+.list-card-title {
+  font-family:'Syne', sans-serif; font-size:0.82rem; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  margin-bottom:0.3rem;
+}
+.list-card-sub { display:flex; gap:0.4rem; align-items:center; }
+.list-card-right { display:flex; align-items:center; gap:0.75rem; flex-shrink:0; }
+
+/* Type colors */
+.t-video { background:var(--rose-dim); color:var(--rose); border:1px solid rgba(251,113,133,0.25); }
+.t-prompt { background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-border); }
+.t-gem { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(251,191,36,0.25); }
+.t-doc { background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,0.25); }
+.t-tutorial { background:var(--sky-dim); color:var(--sky); border:1px solid rgba(56,189,248,0.25); }
+.t-curso { background:rgba(167,139,250,0.1); color:var(--violet); border:1px solid rgba(167,139,250,0.25); }
+.t-herramienta { background:rgba(248,113,113,0.1); color:#f87171; border:1px solid rgba(248,113,113,0.25); }
+
+/* Empty & Loading */
+.empty-state {
+  text-align:center; padding:5rem 2rem; color:var(--text-faint);
+  display:none;
+}
+.empty-state.show { display:block; }
+.empty-ico { font-size:2.5rem; margin-bottom:1rem; opacity:0.3; }
+.empty-state h3 { font-family:'Syne', sans-serif; color:var(--text-dim); margin-bottom:0.4rem; }
+.empty-state p { font-size:0.75rem; }
+
+.loading-state {
+  text-align:center; padding:4rem 2rem; color:var(--text-faint);
+}
+.spinner {
+  width:28px; height:28px; border:2px solid var(--border2);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin 0.8s linear infinite; margin:0 auto 1rem;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── MODAL BASE ────────────────────────────────────────── */
+.overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);
+  z-index:200; align-items:center; justify-content:center;
+}
+.overlay.open { display:flex; }
+
+.modal {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:16px; padding:2rem; width:580px;
+  max-width:95vw; max-height:90vh; overflow-y:auto;
+  animation:slideUp 0.22s ease;
+}
+.modal-sm { width:420px; }
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:1.5rem;
+}
+.modal-header h2 { font-family:'Syne', sans-serif; font-size:1.15rem; font-weight:700; }
+.modal-close {
+  background:none; border:none; color:var(--text-dim);
+  font-size:1.1rem; cursor:pointer; padding:0.2rem;
+  transition:color 0.12s;
+}
+.modal-close:hover { color:var(--rose); }
+
+/* Form */
+.form-row { margin-bottom:0.9rem; }
+.form-row label {
+  display:block; font-size:0.62rem; text-transform:uppercase;
+  letter-spacing:0.12em; color:var(--text-faint); margin-bottom:0.35rem;
+}
+.form-row input,
+.form-row select,
+.form-row textarea {
+  width:100%; padding:0.6rem 0.85rem;
+  background:var(--bg); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text);
+  font-family:'DM Mono', monospace; font-size:0.78rem;
+  outline:none; transition:border-color 0.15s;
+}
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus { border-color:var(--accent); }
+.form-row textarea { resize:vertical; min-height:72px; line-height:1.5; }
+.form-row select option { background:var(--surface); }
+.form-row .hint { font-size:0.62rem; color:var(--text-faint); margin-top:0.25rem; }
+
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; }
+.form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.9rem; }
+
+.form-section-title {
+  font-size:0.6rem; text-transform:uppercase; letter-spacing:0.15em;
+  color:var(--text-faint); margin:1.2rem 0 0.75rem;
+  padding-bottom:0.4rem; border-bottom:1px solid var(--border);
+}
+
+.btn-primary {
+  width:100%; padding:0.8rem;
+  background:var(--accent); border:none; border-radius:8px;
+  color:var(--bg); font-family:'Syne', sans-serif;
+  font-size:0.82rem; font-weight:700; cursor:pointer;
+  margin-top:0.5rem; transition:opacity 0.15s;
+}
+.btn-primary:hover { opacity:0.9; }
+.btn-secondary {
+  padding:0.6rem 1rem; background:var(--surface2);
+  border:1px solid var(--border2); border-radius:8px;
+  color:var(--text-dim); font-family:'DM Mono', monospace;
+  font-size:0.75rem; cursor:pointer; transition:all 0.12s;
+}
+.btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+.checkbox-row {
+  display:flex; align-items:center; gap:0.5rem;
+  padding:0.5rem 0;
+}
+.checkbox-row input[type=checkbox] { accent-color:var(--accent); width:14px; height:14px; }
+.checkbox-row label { font-size:0.73rem; color:var(--text-dim); cursor:pointer; margin:0; }
+
+/* ── DETAIL PANEL ──────────────────────────────────────── */
+.detail-modal { width:640px; }
+
+.detail-type {
+  display:inline-block; margin-bottom:0.6rem;
+}
+.detail-title {
+  font-family:'Syne', sans-serif; font-size:1.25rem; font-weight:700;
+  line-height:1.3; margin-bottom:1.25rem;
+}
+.detail-section { margin-bottom:1.1rem; }
+.detail-section > label {
+  font-size:0.58rem; text-transform:uppercase; letter-spacing:0.15em;
+  color:var(--text-faint); display:block; margin-bottom:0.35rem;
+}
+.detail-section p {
+  font-family:'Fraunces', serif; font-style:italic; font-weight:300;
+  font-size:0.82rem; color:var(--text-dim); line-height:1.65;
+}
+.detail-tags { display:flex; flex-wrap:wrap; gap:0.4rem; }
+.detail-meta {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem;
+  margin-bottom:1rem;
+}
+.detail-meta-item label {
+  font-size:0.58rem; text-transform:uppercase; letter-spacing:0.12em;
+  color:var(--text-faint); display:block; margin-bottom:0.25rem;
+}
+.detail-meta-item span { font-size:0.75rem; color:var(--text-dim); }
+
+.detail-notes {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:8px; padding:0.85rem; margin-top:0.35rem;
+  font-size:0.75rem; color:var(--text-dim); line-height:1.6;
+  white-space:pre-wrap;
+}
+.detail-actions {
+  display:flex; gap:0.6rem; margin-top:1.25rem;
+  padding-top:1rem; border-top:1px solid var(--border);
+}
+.detail-link {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:0.5rem;
+  padding:0.65rem; background:var(--accent-dim); border:1px solid var(--accent-border);
+  border-radius:8px; color:var(--accent); text-decoration:none;
+  font-size:0.75rem; transition:background 0.12s;
+}
+.detail-link:hover { background:rgba(129,140,248,0.2); }
+.btn-edit {
+  padding:0.65rem 1rem; background:var(--surface2);
+  border:1px solid var(--border2); border-radius:8px;
+  color:var(--text-dim); font-family:'DM Mono', monospace;
+  font-size:0.75rem; cursor:pointer; transition:all 0.12s;
+}
+.btn-edit:hover { border-color:var(--accent); color:var(--accent); }
+.btn-delete {
+  padding:0.65rem 1rem; background:var(--rose-dim);
+  border:1px solid rgba(251,113,133,0.25); border-radius:8px;
+  color:var(--rose); font-family:'DM Mono', monospace;
+  font-size:0.75rem; cursor:pointer; transition:all 0.12s;
+}
+.btn-delete:hover { background:rgba(251,113,133,0.2); }
+
+/* ── GLOSARIO MODAL ────────────────────────────────────── */
+.glosario-modal { width:520px; }
+.glosario-term {
+  font-family:'Syne', sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:0.3rem;
+}
+.glosario-cat {
+  font-size:0.62rem; color:var(--text-faint); text-transform:uppercase;
+  letter-spacing:0.12em; margin-bottom:0.9rem;
+}
+.glosario-def {
+  font-family:'Fraunces', serif; font-style:italic; font-weight:300;
+  font-size:0.88rem; color:var(--text-dim); line-height:1.7; margin-bottom:1rem;
+}
+.glosario-example {
+  background:var(--bg); border:1px solid var(--border);
+  border-left:2px solid var(--accent); border-radius:6px; padding:0.75rem 1rem;
+  font-size:0.73rem; color:var(--text-dim); line-height:1.55; margin-bottom:0.8rem;
+}
+.glosario-tools { display:flex; flex-wrap:wrap; gap:0.4rem; }
+
+/* ── TOAST ─────────────────────────────────────────────── */
+.toast {
+  position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:0.65rem 1.25rem;
+  font-size:0.75rem; color:var(--text);
+  opacity:0; pointer-events:none; z-index:999;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.success { border-color:rgba(52,211,153,0.4); color:var(--green); }
+.toast.error { border-color:rgba(251,113,133,0.4); color:var(--rose); }
+
+/* Config banner */
+.config-banner {
+  background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25);
+  border-radius:10px; padding:1rem 1.25rem; font-size:0.75rem;
+  color:var(--amber); line-height:1.6; margin-bottom:0.5rem;
+}
+.config-banner strong { color:var(--amber); }
+.config-banner code {
+  background:rgba(251,191,36,0.1); padding:1px 6px; border-radius:4px;
+  font-family:'DM Mono', monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .body-wrap { flex-direction:column; }
+  .sidebar { display:none; }
+  .main { padding:1rem; }
+  header { padding:1rem; }
+  .logo-sub { display:none; }
+  .form-grid-2, .form-grid-3 { grid-template-columns:1fr; }
+  .detail-meta { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">AI<span>Repo</span></div>
+    <div class="logo-sub">Base de conocimiento</div>
+  </div>
+  <div class="header-right">
+    <div class="stat-chip">
+      <strong id="h-total">0</strong> recursos
+    </div>
+    <div class="stat-chip">
+      <strong id="h-tools">0</strong> herramientas
+    </div>
+    <button class="btn-add" onclick="openAddModal()">+ Agregar</button>
+  </div>
+</header>
+
+<!-- BODY -->
+<div class="body-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sb-section">
+      <div class="sb-label">General</div>
+      <button class="sb-btn active" data-f="all" onclick="setFilter('all',this)">
+        <div class="sb-btn-inner"><span class="sb-icon">◈</span> Todos</div>
+        <span class="sb-count" id="cnt-all">0</span>
+      </button>
+      <button class="sb-btn" data-f="featured" onclick="setFilter('featured',this)">
+        <div class="sb-btn-inner"><span class="sb-icon">★</span> Destacados</div>
+        <span class="sb-count" id="cnt-feat">0</span>
+      </button>
+      <button class="sb-btn" data-f="state:Pendiente" onclick="setFilter('state:Pendiente',this)">
+        <div class="sb-btn-inner"><span class="sb-icon">◷</span> Pendientes de ver</div>
+        <span class="sb-count" id="cnt-pend">0</span>
+      </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por herramienta</div>
+      <div id="tool-filters"></div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por modalidad</div>
+
+      <button class="sb-btn" data-f="modal:Texto" onclick="setFilter('modal:Texto',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#34d399">T</span> Texto</div>
+        <span class="sb-count" id="cnt-texto">0</span>
+      </button>
+
+      <button class="sb-btn" data-f="modal:Imagen" onclick="setFilter('modal:Imagen',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fbbf24">◧</span> Imagen</div>
+        <span class="sb-count" id="cnt-imagen">0</span>
+      </button>
+
+      <button class="sb-btn" data-f="modal:Video" onclick="toggleSub('sub-video',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fb7185">▶</span> Video</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-video">
+        <button class="sb-btn" data-f="sub:Texto a Video" onclick="setFilter('sub:Texto a Video',this)">
+          <div class="sb-btn-inner">Texto a Video <span class="help-ico" onclick="showGlosario('Texto a Video',event)">?</span></div>
+          <span class="sb-count" id="cnt-t2v">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Imagen a Video" onclick="setFilter('sub:Imagen a Video',this)">
+          <div class="sb-btn-inner">Imagen a Video</div>
+          <span class="sb-count" id="cnt-i2v">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Edición de Video" onclick="setFilter('sub:Edición de Video',this)">
+          <div class="sb-btn-inner">Edición de Video</div>
+          <span class="sb-count" id="cnt-editv">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Avatares" onclick="setFilter('sub:Avatares',this)">
+          <div class="sb-btn-inner">Avatares</div>
+          <span class="sb-count" id="cnt-av">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Animación" onclick="setFilter('sub:Animación',this)">
+          <div class="sb-btn-inner">Animación</div>
+          <span class="sb-count" id="cnt-anim">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Audio" onclick="toggleSub('sub-audio',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#818cf8">♫</span> Audio</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-audio">
+        <button class="sb-btn" data-f="sub:Voz & TTS" onclick="setFilter('sub:Voz & TTS',this)">
+          <div class="sb-btn-inner">Voz & TTS</div>
+          <span class="sb-count" id="cnt-voz">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Música" onclick="setFilter('sub:Música',this)">
+          <div class="sb-btn-inner">Música</div>
+          <span class="sb-count" id="cnt-mus">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Transcripción" onclick="setFilter('sub:Transcripción',this)">
+          <div class="sb-btn-inner">Transcripción</div>
+          <span class="sb-count" id="cnt-trans">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Clonación de voz" onclick="setFilter('sub:Clonación de voz',this)">
+          <div class="sb-btn-inner">Clonación de voz</div>
+          <span class="sb-count" id="cnt-clon">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Multimodal" onclick="toggleSub('sub-multi',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#38bdf8">⊕</span> Multimodal</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-multi">
+        <button class="sb-btn" data-f="sub:Vision" onclick="setFilter('sub:Vision',this)">
+          <div class="sb-btn-inner">Vision <span class="help-ico" onclick="showGlosario('Vision',event)">?</span></div>
+          <span class="sb-count" id="cnt-vis">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:RAG" onclick="setFilter('sub:RAG',this)">
+          <div class="sb-btn-inner">RAG <span class="help-ico" onclick="showGlosario('RAG',event)">?</span></div>
+          <span class="sb-count" id="cnt-rag">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:OCR" onclick="setFilter('sub:OCR',this)">
+          <div class="sb-btn-inner">OCR <span class="help-ico" onclick="showGlosario('OCR',event)">?</span></div>
+          <span class="sb-count" id="cnt-ocr">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Análisis de imagen" onclick="setFilter('sub:Análisis de imagen',this)">
+          <div class="sb-btn-inner">Análisis de imagen</div>
+          <span class="sb-count" id="cnt-aimag">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Vibe Coding" onclick="toggleSub('sub-vibe',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#a78bfa">{ }</span> Vibe Coding</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-vibe">
+        <button class="sb-btn" data-f="sub:Frontend" onclick="setFilter('sub:Frontend',this)">
+          <div class="sb-btn-inner">Frontend <span class="help-ico" onclick="showGlosario('Frontend',event)">?</span></div>
+          <span class="sb-count" id="cnt-fe">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Backend" onclick="setFilter('sub:Backend',this)">
+          <div class="sb-btn-inner">Backend</div>
+          <span class="sb-count" id="cnt-be">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Full Stack" onclick="setFilter('sub:Full Stack',this)">
+          <div class="sb-btn-inner">Full Stack</div>
+          <span class="sb-count" id="cnt-fs">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Mobile" onclick="setFilter('sub:Mobile',this)">
+          <div class="sb-btn-inner">Mobile</div>
+          <span class="sb-count" id="cnt-mob">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Scripts" onclick="setFilter('sub:Scripts',this)">
+          <div class="sb-btn-inner">Scripts / Automatización</div>
+          <span class="sb-count" id="cnt-scr">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Prompts de Código" onclick="setFilter('sub:Prompts de Código',this)">
+          <div class="sb-btn-inner">Prompts de Código</div>
+          <span class="sb-count" id="cnt-pc">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Extensiones" onclick="toggleSub('sub-ext',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#34d399">⬡</span> Extensiones</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-ext">
+        <button class="sb-btn" data-f="sub:Chrome para Gemini" onclick="setFilter('sub:Chrome para Gemini',this)">
+          <div class="sb-btn-inner">Chrome para Gemini</div>
+          <span class="sb-count" id="cnt-cg">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Chrome para NotebookLM" onclick="setFilter('sub:Chrome para NotebookLM',this)">
+          <div class="sb-btn-inner">Chrome para NotebookLM</div>
+          <span class="sb-count" id="cnt-cn">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Chrome para ChatGPT" onclick="setFilter('sub:Chrome para ChatGPT',this)">
+          <div class="sb-btn-inner">Chrome para ChatGPT</div>
+          <span class="sb-count" id="cnt-cc">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Productividad general" onclick="setFilter('sub:Productividad general',this)">
+          <div class="sb-btn-inner">Productividad general</div>
+          <span class="sb-count" id="cnt-pg">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Agentes" onclick="toggleSub('sub-agen',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fb7185">⟳</span> Agentes</div>
+        <span class="sb-chevron">▶</span>
+      </button>
+      <div class="subtree" id="sub-agen">
+        <button class="sb-btn" data-f="sub:Automatización" onclick="setFilter('sub:Automatización',this)">
+          <div class="sb-btn-inner">Automatización</div>
+          <span class="sb-count" id="cnt-auto">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Research Agent" onclick="setFilter('sub:Research Agent',this)">
+          <div class="sb-btn-inner">Research Agent <span class="help-ico" onclick="showGlosario('Research Agent',event)">?</span></div>
+          <span class="sb-count" id="cnt-ra">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Coding Agent" onclick="setFilter('sub:Coding Agent',this)">
+          <div class="sb-btn-inner">Coding Agent</div>
+          <span class="sb-count" id="cnt-ca">0</span>
+        </button>
+        <button class="sb-btn" data-f="sub:Multi-agente" onclick="setFilter('sub:Multi-agente',this)">
+          <div class="sb-btn-inner">Multi-agente <span class="help-ico" onclick="showGlosario('Multi-agente',event)">?</span></div>
+          <span class="sb-count" id="cnt-ma">0</span>
+        </button>
+      </div>
+
+      <button class="sb-btn" data-f="modal:Productividad" onclick="setFilter('modal:Productividad',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fbbf24">◎</span> Productividad</div>
+        <span class="sb-count" id="cnt-prod">0</span>
+      </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por tipo</div>
+      <button class="sb-btn" data-f="type:Video YouTube" onclick="setFilter('type:Video YouTube',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fb7185">▶</span> Video YouTube</div>
+        <span class="sb-count" id="cnt-yt">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Prompt" onclick="setFilter('type:Prompt',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#818cf8">✦</span> Prompt</div>
+        <span class="sb-count" id="cnt-prom">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Gem" onclick="setFilter('type:Gem',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#fbbf24">◆</span> Gem</div>
+        <span class="sb-count" id="cnt-gem">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Documento" onclick="setFilter('type:Documento',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#34d399">≡</span> Documento</div>
+        <span class="sb-count" id="cnt-doc">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Tutorial" onclick="setFilter('type:Tutorial',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#38bdf8">❯</span> Tutorial</div>
+        <span class="sb-count" id="cnt-tut">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Curso" onclick="setFilter('type:Curso',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#a78bfa">◉</span> Curso</div>
+        <span class="sb-count" id="cnt-cur">0</span>
+      </button>
+      <button class="sb-btn" data-f="type:Herramienta" onclick="setFilter('type:Herramienta',this)">
+        <div class="sb-btn-inner"><span class="sb-icon" style="color:#f87171">⚙</span> Herramienta</div>
+        <span class="sb-count" id="cnt-her">0</span>
+      </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por nivel</div>
+      <button class="sb-btn" data-f="level:Básico" onclick="setFilter('level:Básico',this)">
+        <div class="sb-btn-inner">Básico</div>
+        <span class="sb-count" id="cnt-bas">0</span>
+      </button>
+      <button class="sb-btn" data-f="level:Intermedio" onclick="setFilter('level:Intermedio',this)">
+        <div class="sb-btn-inner">Intermedio</div>
+        <span class="sb-count" id="cnt-int">0</span>
+      </button>
+      <button class="sb-btn" data-f="level:Avanzado" onclick="setFilter('level:Avanzado',this)">
+        <div class="sb-btn-inner">Avanzado</div>
+        <span class="sb-count" id="cnt-adv">0</span>
+      </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por idioma</div>
+      <button class="sb-btn" data-f="lang:ES" onclick="setFilter('lang:ES',this)">
+        <div class="sb-btn-inner">🇪🇸 Español</div>
+        <span class="sb-count" id="cnt-es">0</span>
+      </button>
+      <button class="sb-btn" data-f="lang:EN" onclick="setFilter('lang:EN',this)">
+        <div class="sb-btn-inner">🇬🇧 Inglés</div>
+        <span class="sb-count" id="cnt-en">0</span>
+      </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section">
+      <div class="sb-label">Por costo</div>
+      <button class="sb-btn" data-f="cost:Gratis" onclick="setFilter('cost:Gratis',this)">
+        <div class="sb-btn-inner" style="color:#34d399">Gratis</div>
+        <span class="sb-count" id="cnt-free">0</span>
+      </button>
+      <button class="sb-btn" data-f="cost:Freemium" onclick="setFilter('cost:Freemium',this)">
+        <div class="sb-btn-inner" style="color:#fbbf24">Freemium</div>
+        <span class="sb-count" id="cnt-frem">0</span>
+      </button>
+      <button class="sb-btn" data-f="cost:Pago" onclick="setFilter('cost:Pago',this)">
+        <div class="sb-btn-inner" style="color:#fb7185">Pago</div>
+        <span class="sb-count" id="cnt-pay">0</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Config banner (visible until SCRIPT_URL is set) -->
+    <div class="config-banner" id="config-banner">
+      ⚙️ <strong>Configuración pendiente:</strong> Abre este archivo en un editor de texto, busca
+      <code>SCRIPT_URL</code> al inicio del script y reemplázalo con la URL de tu Google Apps Script desplegado.
+      Luego guarda y sube el archivo a GitHub Pages. El <strong>paso a paso completo</strong> está en el archivo
+      <code>GUIA-SETUP.md</code> que descargaste junto a este.
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="search-ico">⌕</span>
+      <input class="search-input" id="search" type="text"
+        placeholder="Buscar por título, resumen, herramienta, etiqueta, autor..."
+        oninput="onSearch()">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="results-info">
+        Mostrando <strong id="vis-count">0</strong> de <strong id="tot-count">0</strong> recursos
+      </div>
+      <div class="toolbar-right">
+        <select class="sort-select" id="sort-sel" onchange="render()">
+          <option value="date">Más reciente</option>
+          <option value="stars">Mejor valorado</option>
+          <option value="title">A → Z</option>
+          <option value="added">Recién agregado</option>
+        </select>
+        <div class="view-toggle">
+          <button class="view-btn active" id="vb-grid" onclick="setView('grid')">⊞</button>
+          <button class="view-btn" id="vb-list" onclick="setView('list')">≡</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active filter pills -->
+    <div class="pills-bar" id="pills-bar"></div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="loading">
+      <div class="spinner"></div>
+      <div style="font-size:0.75rem;color:var(--text-faint)">Cargando recursos...</div>
+    </div>
+
+    <!-- Cards -->
+    <div class="cards-grid" id="cards-grid"></div>
+    <div class="cards-list hidden" id="cards-list"></div>
+
+    <!-- Empty -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-ico">◎</div>
+      <h3>Sin resultados</h3>
+      <p>Prueba con otros términos o limpia los filtros.</p>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<!-- ── ADD / EDIT MODAL ─────────────────────────────────── -->
+<div class="overlay" id="add-overlay" onclick="overlayClose(event,'add-overlay')">
+<div class="modal">
+  <div class="modal-header">
+    <h2 id="add-modal-title">Agregar recurso</h2>
+    <button class="modal-close" onclick="closeAddModal()">✕</button>
+  </div>
+
+  <input type="hidden" id="f-id">
+
+  <div class="form-section-title">Información principal</div>
+  <div class="form-row">
+    <label>Título *</label>
+    <input id="f-title" type="text" placeholder="Ej: Cómo crear un cuaderno en NotebookLM de forma profesional">
+  </div>
+  <div class="form-row">
+    <label>Resumen — qué problema resuelve *</label>
+    <textarea id="f-summary" placeholder="Describe brevemente qué aprenderás o resolverás con este recurso. Esto es lo que hará que lo encuentres en el futuro."></textarea>
+  </div>
+  <div class="form-row">
+    <label>URL del recurso</label>
+    <input id="f-url" type="url" placeholder="https://...">
+  </div>
+  <div class="form-row">
+    <label>Autor / Canal</label>
+    <input id="f-author" type="text" placeholder="Ej: Dot CSV, Matt Wolfe, nombre del canal">
+  </div>
+
+  <div class="form-section-title">Clasificación</div>
+  <div class="form-grid-2">
+    <div class="form-row">
+      <label>Tipo de recurso *</label>
+      <select id="f-type">
+        <option>Video YouTube</option><option>Prompt</option><option>Gem</option>
+        <option>Documento</option><option>Tutorial</option><option>Curso</option><option>Herramienta</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Modalidad *</label>
+      <select id="f-modal" onchange="updateSubtypes()">
+        <option>Texto</option><option>Imagen</option><option>Video</option>
+        <option>Audio</option><option>Multimodal</option><option>Vibe Coding</option>
+        <option>Extensiones</option><option>Agentes</option><option>Productividad</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row" id="subtype-row">
+    <label>Subtipo</label>
+    <select id="f-subtype"></select>
+  </div>
+  <div class="form-row">
+    <label>Herramientas / Modelos (separados por coma)</label>
+    <input id="f-tools" type="text" placeholder="Ej: NotebookLM, Gemini, Claude">
+    <div class="hint">Si hay más de una, sepáralas con coma. Ej: Claude, Make, Notion</div>
+  </div>
+  <div class="form-row">
+    <label>Etiquetas libres (separadas por coma)</label>
+    <input id="f-tags" type="text" placeholder="Ej: workflow, batch, productividad, paso-a-paso">
+  </div>
+
+  <div class="form-section-title">Detalles</div>
+  <div class="form-grid-3">
+    <div class="form-row">
+      <label>Nivel</label>
+      <select id="f-level"><option>Básico</option><option>Intermedio</option><option>Avanzado</option></select>
+    </div>
+    <div class="form-row">
+      <label>Idioma</label>
+      <select id="f-lang"><option>ES</option><option>EN</option><option>PT</option><option>FR</option><option>Otro</option></select>
+    </div>
+    <div class="form-row">
+      <label>Valoración</label>
+      <select id="f-stars">
+        <option value="5">★★★★★</option><option value="4">★★★★</option>
+        <option value="3">★★★</option><option value="2">★★</option><option value="1">★</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-grid-2">
+    <div class="form-row">
+      <label>Duración</label>
+      <input id="f-duration" type="text" placeholder="Ej: 18 min, 1h 20m, 5 págs">
+    </div>
+    <div class="form-row">
+      <label>Requiere pago</label>
+      <select id="f-cost"><option>Gratis</option><option>Freemium</option><option>Pago</option></select>
+    </div>
+  </div>
+  <div class="form-grid-2">
+    <div class="form-row">
+      <label>Fecha de publicación</label>
+      <input id="f-pubdate" type="date">
+    </div>
+    <div class="form-row">
+      <label>Aplicable a (coma)</label>
+      <input id="f-aplicable" type="text" placeholder="Personal, Negocio, Clientes">
+    </div>
+  </div>
+  <div class="form-row">
+    <label>Versión del modelo</label>
+    <input id="f-version" type="text" placeholder="Ej: GPT-4o, Claude 3.7, Gemini 2.0 Pro">
+  </div>
+  <div class="form-row">
+    <label>Recurso relacionado (URL o título)</label>
+    <input id="f-related" type="text" placeholder="URL o título de otro recurso que complementa este">
+  </div>
+
+  <div class="form-section-title">Notas y marcadores</div>
+  <div class="form-row">
+    <label>Notas personales</label>
+    <textarea id="f-notes" placeholder="Tus anotaciones, insights, cosas que aprendiste o quieres recordar..."></textarea>
+  </div>
+  <div class="form-grid-3">
+    <div class="checkbox-row">
+      <input type="checkbox" id="f-featured">
+      <label for="f-featured">⭐ Destacado</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="f-prompt">
+      <label for="f-prompt">✦ Prompt incluido</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="f-stepbystep">
+      <label for="f-stepbystep">❯ Paso a paso</label>
+    </div>
+  </div>
+  <div class="form-row">
+    <label>Estado</label>
+    <select id="f-state">
+      <option>Pendiente</option><option>Visto</option>
+      <option>En progreso</option><option>Archivado</option>
+    </select>
+  </div>
+
+  <button class="btn-primary" id="add-btn" onclick="submitResource()">Guardar recurso</button>
+</div>
+</div>
+
+<!-- ── DETAIL MODAL ─────────────────────────────────────── -->
+<div class="overlay" id="detail-overlay" onclick="overlayClose(event,'detail-overlay')">
+<div class="modal detail-modal">
+  <div class="modal-header">
+    <div>
+      <span id="d-type" class="type-badge detail-type"></span>
+      <h2 class="detail-title" id="d-title"></h2>
+    </div>
+    <button class="modal-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-section">
+    <label>Resumen</label>
+    <p id="d-summary"></p>
+  </div>
+  <div class="detail-meta">
+    <div class="detail-meta-item"><label>Herramientas</label><div id="d-tools" class="detail-tags"></div></div>
+    <div class="detail-meta-item"><label>Modalidad</label><div id="d-modal" class="detail-tags"></div></div>
+    <div class="detail-meta-item"><label>Nivel · Idioma</label><div id="d-level" class="detail-tags"></div></div>
+    <div class="detail-meta-item"><label>Valoración</label><span id="d-stars" style="color:var(--amber);font-size:0.85rem"></span></div>
+    <div class="detail-meta-item"><label>Estado</label><span id="d-state" class="tag"></span></div>
+    <div class="detail-meta-item"><label>Costo</label><span id="d-cost" class="tag"></span></div>
+    <div class="detail-meta-item"><label>Duración</label><span id="d-dur" class="tag"></span></div>
+    <div class="detail-meta-item"><label>Autor / Canal</label><span id="d-author" style="font-size:0.75rem;color:var(--text-dim)"></span></div>
+    <div class="detail-meta-item"><label>Versión modelo</label><span id="d-version" style="font-size:0.75rem;color:var(--text-dim)"></span></div>
+  </div>
+  <div class="detail-section">
+    <label>Etiquetas</label>
+    <div class="detail-tags" id="d-tags"></div>
+  </div>
+  <div class="detail-section" id="d-notes-wrap">
+    <label>Notas personales</label>
+    <div class="detail-notes" id="d-notes"></div>
+  </div>
+  <div class="detail-section" id="d-related-wrap">
+    <label>Recurso relacionado</label>
+    <p id="d-related"></p>
+  </div>
+  <div class="detail-actions">
+    <a id="d-link" class="detail-link" href="#" target="_blank">↗ Abrir recurso</a>
+    <button class="btn-edit" onclick="editCurrent()">✎ Editar</button>
+    <button class="btn-delete" onclick="deleteCurrent()">✕ Eliminar</button>
+  </div>
+</div>
+</div>
+
+<!-- ── GLOSARIO MODAL ───────────────────────────────────── -->
+<div class="overlay" id="glosario-overlay" onclick="overlayClose(event,'glosario-overlay')">
+<div class="modal glosario-modal modal-sm">
+  <div class="modal-header">
+    <div>
+      <div class="glosario-term" id="g-term"></div>
+      <div class="glosario-cat" id="g-cat"></div>
+    </div>
+    <button class="modal-close" onclick="closeGlosario()">✕</button>
+  </div>
+  <div class="glosario-def" id="g-def"></div>
+  <div class="glosario-example" id="g-example"></div>
+  <div class="detail-section">
+    <label>Herramientas asociadas</label>
+    <div class="glosario-tools" id="g-tools"></div>
+  </div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<style>
+.help-ico {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:14px; height:14px; border-radius:50%;
+  background:var(--surface3); border:1px solid var(--border2);
+  font-size:0.55rem; color:var(--text-faint); cursor:pointer;
+  margin-left:0.3rem; flex-shrink:0;
+  transition:all 0.12s;
+}
+.help-ico:hover { background:var(--accent-dim); color:var(--accent); border-color:var(--accent-border); }
+</style>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — CAMBIA SOLO ESTA LÍNEA
+// ════════════════════════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+';
+// ════════════════════════════════════════════════════════════
+
+const SUBTYPES = {
+  Texto:       ['Escritura','Resumen','Traducción','RAG','Código','Análisis','Investigación'],
+  Imagen:      ['Generación','Edición','Upscaling','Estilo','Restauración'],
+  Video:       ['Texto a Video','Imagen a Video','Edición de Video','Avatares','Animación'],
+  Audio:       ['Voz & TTS','Música','Transcripción','Podcast','Clonación de voz'],
+  Multimodal:  ['Análisis de imagen','Documentos','OCR','Vision'],
+  'Vibe Coding':['Frontend','Backend','Full Stack','Mobile','Scripts','Prompts de Código'],
+  Extensiones: ['Chrome para Gemini','Chrome para NotebookLM','Chrome para ChatGPT','Chrome para Claude','Productividad general'],
+  Agentes:     ['Automatización','Research Agent','Coding Agent','Multi-agente'],
+  Productividad:['Organización','PKM','Flujos de trabajo','Notas']
+};
+
+let resources = [];
+let glosario = [];
+let activeFilter = 'all';
+let currentView = 'grid';
+let currentDetailId = null;
+const isConfigured = SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+https://script.google.com/macros/s/AKfycbxzmvacygd0e_xzMh7IjUYuPxSddCrPjD_Jq-yXlvkppajjaClSTQu5_FRvKA1qJXAj/exec
+';
+
+// ── INIT ─────────────────────────────────────────────────
+async function init() {
+  if (!isConfigured) {
+    document.getElementById('config-banner').style.display = 'block';
+    loadDemo();
+    return;
+  }
+  document.getElementById('config-banner').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  try {
+    const [rRes, gRes] = await Promise.all([
+      fetch(`${SCRIPT_URL}?action=getAll`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?action=getGlosario`).then(r=>r.json())
+    ]);
+    resources = rRes.data || [];
+    glosario = gRes.data || [];
+  } catch(e) {
+    showToast('Error al conectar con Google Sheets. Revisa la URL del script.','error');
+    loadDemo();
+  }
+  document.getElementById('loading').style.display = 'none';
+  updateCounts();
+  buildToolFilters();
+  render();
+}
+
+function loadDemo() {
+  resources = [
+    {id:1,titulo:'Cómo crear un cuaderno en NotebookLM de forma profesional',resumen:'Explica cómo estructurar las fuentes para que el cuaderno responda con mayor precisión, incluyendo modo audio y técnicas de organización avanzadas.',url:'https://youtube.com',tipo:'Video YouTube',modalidad:'Texto',subtipo:'',herramientas:'NotebookLM, Gemini',etiquetas:'workflow, fuentes, audio',nivel:'Intermedio',valoracion:5,idioma:'ES',estado:'Visto',autor_canal:'Dot CSV',fecha_publicacion:'2025-03-10',fecha_agregado:'2025-04-01',duracion:'22 min',aplicable_a:'Personal',requiere_pago:'Gratis',notas_personales:'Revisar sección de fuentes estructuradas.',recurso_relacionado:'',destacado:'SI',prompt_incluido:'',tiene_paso_a_paso:'SI',version_modelo:'Gemini 2.0'},
+    {id:2,titulo:'Prompt maestro para análisis de documentos con Claude',resumen:'Prompt estructurado con XML que permite extraer insights clave de documentos largos usando cadena de pensamiento.',url:'https://claude.ai',tipo:'Prompt',modalidad:'Texto',subtipo:'Análisis',herramientas:'Claude',etiquetas:'análisis, XML, documentos',nivel:'Avanzado',valoracion:5,idioma:'EN',estado:'Visto',autor_canal:'Anthropic',fecha_publicacion:'2025-02-15',fecha_agregado:'2025-04-05',duracion:'',aplicable_a:'Negocio, Personal',requiere_pago:'Freemium',notas_personales:'',recurso_relacionado:'',destacado:'SI',prompt_incluido:'SI',tiene_paso_a_paso:'',version_modelo:'Claude 3.7'},
+    {id:3,titulo:'Sora vs Kling vs Runway — Comparativa completa 2025',resumen:'Análisis de los tres modelos líderes de texto a video con ejemplos y recomendaciones por caso de uso.',url:'https://youtube.com',tipo:'Video YouTube',modalidad:'Video',subtipo:'Texto a Video',herramientas:'Sora, Kling, Runway',etiquetas:'comparativa, generación',nivel:'Básico',valoracion:4,idioma:'ES',estado:'Pendiente',autor_canal:'Matt Wolfe',fecha_publicacion:'2025-03-28',fecha_agregado:'2025-04-10',duracion:'35 min',aplicable_a:'Personal',requiere_pago:'Pago',notas_personales:'',recurso_relacionado:'',destacado:'',prompt_incluido:'',tiene_paso_a_paso:'',version_modelo:''},
+    {id:4,titulo:'Claude Code — Skills avanzadas y mejores prácticas',resumen:'Guía completa sobre cómo usar las Skills en Claude Code para proyectos de Vibe Coding, incluyendo frontend y full stack.',url:'https://docs.anthropic.com',tipo:'Tutorial',modalidad:'Vibe Coding',subtipo:'Full Stack',herramientas:'Claude Code, Claude',etiquetas:'skills, coding, productividad',nivel:'Avanzado',valoracion:5,idioma:'EN',estado:'En progreso',autor_canal:'Anthropic',fecha_publicacion:'2025-04-01',fecha_agregado:'2025-04-15',duracion:'45 min',aplicable_a:'Personal, Negocio',requiere_pago:'Freemium',notas_personales:'Probar con proyecto real esta semana.',recurso_relacionado:'',destacado:'SI',prompt_incluido:'',tiene_paso_a_paso:'SI',version_modelo:'Claude Sonnet 4'},
+    {id:5,titulo:'10 extensiones Chrome imprescindibles para Gemini',resumen:'Listado comentado de las mejores extensiones que potencian el trabajo con Gemini en el navegador.',url:'https://youtube.com',tipo:'Video YouTube',modalidad:'Extensiones',subtipo:'Chrome para Gemini',herramientas:'Gemini, Chrome',etiquetas:'extensiones, productividad, gemini',nivel:'Básico',valoracion:4,idioma:'ES',estado:'Visto',autor_canal:'IA Explicada',fecha_publicacion:'2025-03-05',fecha_agregado:'2025-03-20',duracion:'18 min',aplicable_a:'Personal',requiere_pago:'Gratis',notas_personales:'',recurso_relacionado:'',destacado:'',prompt_incluido:'',tiene_paso_a_paso:'',version_modelo:''}
+  ];
+  glosario = [
+    {termino:'Vision',categoria:'Subtipo',pertenece_a:'Multimodal',definicion:'Capacidad de los modelos de IA para analizar, describir e interpretar imágenes, capturas de pantalla o documentos visuales como entrada (input). El modelo "ve" la imagen y puede responder preguntas sobre ella.',ejemplo_uso:'Subir una captura de pantalla de un error de código y pedirle a GPT-4o que lo diagnostique.',herramientas_asociadas:'GPT-4o, Claude, Gemini'},
+    {termino:'RAG',categoria:'Subtipo',pertenece_a:'Texto / Multimodal',definicion:'Retrieval-Augmented Generation. Técnica que permite a un modelo de IA buscar información en documentos externos antes de responder, combinando búsqueda semántica con generación de texto. Mejora drásticamente la precisión en bases de conocimiento.',ejemplo_uso:'Conectar NotebookLM a tus propios documentos para que responda preguntas basadas solo en ellos.',herramientas_asociadas:'NotebookLM, LlamaIndex, Perplexity'},
+    {termino:'OCR',categoria:'Subtipo',pertenece_a:'Multimodal',definicion:'Optical Character Recognition. Tecnología que convierte texto presente en imágenes o PDFs escaneados en texto digital editable y buscable.',ejemplo_uso:'Subir un PDF escaneado a Claude para extraer y resumir su contenido aunque sea una imagen.',herramientas_asociadas:'Claude, GPT-4o, Adobe'},
+    {termino:'Frontend',categoria:'Subtipo',pertenece_a:'Vibe Coding',definicion:'La parte visual e interactiva de una aplicación web o móvil, lo que el usuario ve y toca. Incluye HTML, CSS y JavaScript.',ejemplo_uso:'Pedirle a Claude que cree un dashboard con gráficos en React sin saber programar.',herramientas_asociadas:'Claude Code, v0, Cursor'},
+    {termino:'Research Agent',categoria:'Subtipo',pertenece_a:'Agentes',definicion:'Agente de IA que puede navegar la web, buscar información en múltiples fuentes, sintetizarla y entregar un informe estructurado de forma autónoma.',ejemplo_uso:'Pedirle a Perplexity Deep Research que investigue el estado del mercado de herramientas de edición de video con IA.',herramientas_asociadas:'Perplexity, Gemini Deep Research, OpenAI Deep Research'},
+    {termino:'Multi-agente',categoria:'Subtipo',pertenece_a:'Agentes',definicion:'Sistema donde múltiples agentes de IA trabajan en paralelo o en secuencia, cada uno especializado en una tarea, coordinados por un agente orquestador.',ejemplo_uso:'Un agente busca información, otro la analiza y otro genera el informe final, todo coordinado automáticamente.',herramientas_asociadas:'CrewAI, AutoGen, LangGraph'},
+    {termino:'Texto a Video',categoria:'Subtipo',pertenece_a:'Video',definicion:'Capacidad de generar un video completo a partir de una descripción textual (prompt). El modelo interpreta el texto y crea las imágenes en movimiento correspondientes.',ejemplo_uso:'Escribir "una ciudad futurista de noche con lluvia y autos voladores" y obtener un clip de 5 segundos.',herramientas_asociadas:'Sora, Kling, Runway, Pika'}
+  ];
+  document.getElementById('loading').style.display = 'none';
+  updateCounts();
+  buildToolFilters();
+  render();
+}
+
+// ── COUNTS ───────────────────────────────────────────────
+function updateCounts() {
+  const r = resources;
+  document.getElementById('h-total').textContent = r.length;
+  const tools = new Set(r.flatMap(x => splitField(x.herramientas)));
+  document.getElementById('h-tools').textContent = tools.size;
+
+  setC('cnt-all', r.length);
+  setC('cnt-feat', r.filter(x=>x.destacado==='SI').length);
+  setC('cnt-pend', r.filter(x=>x.estado==='Pendiente').length);
+  setC('cnt-texto', r.filter(x=>x.modalidad==='Texto').length);
+  setC('cnt-imagen', r.filter(x=>x.modalidad==='Imagen').length);
+  setC('cnt-multi', r.filter(x=>x.modalidad==='Multimodal').length);
+  setC('cnt-prod', r.filter(x=>x.modalidad==='Productividad').length);
+  setC('cnt-t2v', r.filter(x=>x.subtipo==='Texto a Video').length);
+  setC('cnt-i2v', r.filter(x=>x.subtipo==='Imagen a Video').length);
+  setC('cnt-editv', r.filter(x=>x.subtipo==='Edición de Video').length);
+  setC('cnt-av', r.filter(x=>x.subtipo==='Avatares').length);
+  setC('cnt-anim', r.filter(x=>x.subtipo==='Animación').length);
+  setC('cnt-voz', r.filter(x=>x.subtipo==='Voz & TTS').length);
+  setC('cnt-mus', r.filter(x=>x.subtipo==='Música').length);
+  setC('cnt-trans', r.filter(x=>x.subtipo==='Transcripción').length);
+  setC('cnt-clon', r.filter(x=>x.subtipo==='Clonación de voz').length);
+  setC('cnt-vis', r.filter(x=>x.subtipo==='Vision').length);
+  setC('cnt-rag', r.filter(x=>x.subtipo==='RAG').length);
+  setC('cnt-ocr', r.filter(x=>x.subtipo==='OCR').length);
+  setC('cnt-aimag', r.filter(x=>x.subtipo==='Análisis de imagen').length);
+  setC('cnt-fe', r.filter(x=>x.subtipo==='Frontend').length);
+  setC('cnt-be', r.filter(x=>x.subtipo==='Backend').length);
+  setC('cnt-fs', r.filter(x=>x.subtipo==='Full Stack').length);
+  setC('cnt-mob', r.filter(x=>x.subtipo==='Mobile').length);
+  setC('cnt-scr', r.filter(x=>x.subtipo==='Scripts').length);
+  setC('cnt-pc', r.filter(x=>x.subtipo==='Prompts de Código').length);
+  setC('cnt-cg', r.filter(x=>x.subtipo==='Chrome para Gemini').length);
+  setC('cnt-cn', r.filter(x=>x.subtipo==='Chrome para NotebookLM').length);
+  setC('cnt-cc', r.filter(x=>x.subtipo==='Chrome para ChatGPT').length);
+  setC('cnt-pg', r.filter(x=>x.subtipo==='Productividad general').length);
+  setC('cnt-auto', r.filter(x=>x.subtipo==='Automatización').length);
+  setC('cnt-ra', r.filter(x=>x.subtipo==='Research Agent').length);
+  setC('cnt-ca', r.filter(x=>x.subtipo==='Coding Agent').length);
+  setC('cnt-ma', r.filter(x=>x.subtipo==='Multi-agente').length);
+  setC('cnt-yt', r.filter(x=>x.tipo==='Video YouTube').length);
+  setC('cnt-prom', r.filter(x=>x.tipo==='Prompt').length);
+  setC('cnt-gem', r.filter(x=>x.tipo==='Gem').length);
+  setC('cnt-doc', r.filter(x=>x.tipo==='Documento').length);
+  setC('cnt-tut', r.filter(x=>x.tipo==='Tutorial').length);
+  setC('cnt-cur', r.filter(x=>x.tipo==='Curso').length);
+  setC('cnt-her', r.filter(x=>x.tipo==='Herramienta').length);
+  setC('cnt-bas', r.filter(x=>x.nivel==='Básico').length);
+  setC('cnt-int', r.filter(x=>x.nivel==='Intermedio').length);
+  setC('cnt-adv', r.filter(x=>x.nivel==='Avanzado').length);
+  setC('cnt-es', r.filter(x=>x.idioma==='ES').length);
+  setC('cnt-en', r.filter(x=>x.idioma==='EN').length);
+  setC('cnt-free', r.filter(x=>x.requiere_pago==='Gratis').length);
+  setC('cnt-frem', r.filter(x=>x.requiere_pago==='Freemium').length);
+  setC('cnt-pay', r.filter(x=>x.requiere_pago==='Pago').length);
+}
+
+function setC(id, n) { const el=document.getElementById(id); if(el) el.textContent=n; }
+
+// ── TOOL FILTERS ─────────────────────────────────────────
+function buildToolFilters() {
+  const tools = [...new Set(resources.flatMap(r=>splitField(r.herramientas)))].sort();
+  document.getElementById('tool-filters').innerHTML = tools.map(t => {
+    const c = resources.filter(r=>splitField(r.herramientas).includes(t)).length;
+    return `<button class="sb-btn" data-f="tool:${t}" onclick="setFilter('tool:${t}',this)">
+      <div class="sb-btn-inner"><span class="sb-icon">·</span>${t}</div>
+      <span class="sb-count">${c}</span>
+    </button>`;
+  }).join('');
+}
+
+// ── FILTER ───────────────────────────────────────────────
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.sb-btn').forEach(b=>b.classList.remove('active','expanded'));
+  if(el) {
+    el.classList.add('active');
+    // Open parent subtree if needed
+    const sub = el.closest('.subtree');
+    if(sub) {
+      sub.classList.add('open');
+      const prev = sub.previousElementSibling;
+      if(prev && prev.classList.contains('sb-btn')) prev.classList.add('expanded');
+    }
+  }
+  updatePills();
+  render();
+}
+
+function toggleSub(id, btn) {
+  document.getElementById(id).classList.toggle('open');
+  btn.classList.toggle('expanded');
+}
+
+function updatePills() {
+  const bar = document.getElementById('pills-bar');
+  if(activeFilter === 'all') { bar.innerHTML=''; return; }
+  const label = activeFilter.includes(':') ? activeFilter.split(':')[1] : activeFilter;
+  bar.innerHTML = `<span class="pill" onclick="setFilter('all',document.querySelector('[data-f=all]'))">
+    ${label} <span class="pill-x">✕</span>
+  </span>
+  <span class="pill-clear" onclick="setFilter('all',document.querySelector('[data-f=all]'))">Limpiar filtros</span>`;
+}
+
+// ── SEARCH ───────────────────────────────────────────────
+function onSearch() {
+  const q = document.getElementById('search').value;
+  document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+  render();
+}
+function clearSearch() {
+  document.getElementById('search').value='';
+  document.getElementById('search-clear').style.display='none';
+  render();
+}
+
+// ── MATCH ────────────────────────────────────────────────
+function matchFilter(r) {
+  const f = activeFilter;
+  if(f==='all') return true;
+  if(f==='featured') return r.destacado==='SI';
+  const [type,val] = f.split(':');
+  if(type==='modal') return r.modalidad===val;
+  if(type==='sub') return r.subtipo===val;
+  if(type==='type') return r.tipo===val;
+  if(type==='tool') return splitField(r.herramientas).includes(val);
+  if(type==='level') return r.nivel===val;
+  if(type==='lang') return r.idioma===val;
+  if(type==='cost') return r.requiere_pago===val;
+  if(type==='state') return r.estado===val;
+  return true;
+}
+
+function matchSearch(r, q) {
+  if(!q) return true;
+  q = q.toLowerCase();
+  const fields = [r.titulo,r.resumen,r.herramientas,r.etiquetas,r.tipo,r.modalidad,r.subtipo,r.autor_canal,r.notas_personales,r.version_modelo];
+  return fields.some(s => s && String(s).toLowerCase().includes(q));
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function render() {
+  const q = document.getElementById('search').value;
+  const sort = document.getElementById('sort-sel').value;
+  let filtered = resources.filter(r=>matchFilter(r)&&matchSearch(r,q));
+
+  if(sort==='stars') filtered.sort((a,b)=>b.valoracion-a.valoracion);
+  else if(sort==='title') filtered.sort((a,b)=>String(a.titulo).localeCompare(String(b.titulo)));
+  else if(sort==='added') filtered.sort((a,b)=>new Date(b.fecha_agregado)-new Date(a.fecha_agregado));
+  else filtered.sort((a,b)=>new Date(b.fecha_publicacion||b.fecha_agregado)-new Date(a.fecha_publicacion||a.fecha_agregado));
+
+  document.getElementById('vis-count').textContent = filtered.length;
+  document.getElementById('tot-count').textContent = resources.length;
+
+  const grid = document.getElementById('cards-grid');
+  const list = document.getElementById('cards-list');
+  grid.innerHTML = filtered.map((r,i)=>cardGridHTML(r,i)).join('');
+  list.innerHTML = filtered.map(r=>cardListHTML(r)).join('');
+
+  document.getElementById('empty-state').classList.toggle('show', filtered.length===0);
+}
+
+function typeClass(t) {
+  const m={'Video YouTube':'t-video','Prompt':'t-prompt','Gem':'t-gem','Documento':'t-doc','Tutorial':'t-tutorial','Curso':'t-curso','Herramienta':'t-herramienta'};
+  return m[t]||'';
+}
+function stars(n) { n=parseInt(n)||0; return '★'.repeat(n)+'☆'.repeat(5-n); }
+function splitField(s) { return s ? String(s).split(',').map(x=>x.trim()).filter(Boolean) : []; }
+
+function costColor(c) {
+  if(c==='Gratis') return 'color:var(--green)';
+  if(c==='Freemium') return 'color:var(--amber)';
+  if(c==='Pago') return 'color:var(--rose)';
+  return '';
+}
+
+function cardGridHTML(r, i) {
+  const tools = splitField(r.herramientas).slice(0,3).map(t=>`<span class="tag tool">${t}</span>`).join('');
+  const modal = r.subtipo ? `${r.modalidad} · ${r.subtipo}` : r.modalidad;
+  const tags = splitField(r.etiquetas).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
+  const featured = r.destacado==='SI' ? `<span class="tag featured">★ Dest.</span>` : '';
+  const langTag = r.idioma ? `<span class="tag lang">${r.idioma}</span>` : '';
+  return `<div class="card" style="animation-delay:${i*0.04}s" onclick="openDetail(${r.id})">
+    <div class="card-top">
+      <span class="type-badge ${typeClass(r.tipo)}">${r.tipo}</span>
+      <span class="card-stars">${stars(r.valoracion)}</span>
+    </div>
+    <div class="card-title">${r.titulo}</div>
+    <div class="card-summary">${r.resumen||''}</div>
+    <div class="card-tags">
+      ${tools}
+      <span class="tag modal">${modal}</span>
+      ${tags}
+      ${featured}
+      ${langTag}
+    </div>
+    <div class="card-footer">
+      <div class="card-meta-small">
+        ${r.duracion?r.duracion+' · ':''}
+        <span style="${costColor(r.requiere_pago)}">${r.requiere_pago||''}</span>
+        ${r.estado==='Pendiente'?' · ⏳ Pendiente':''}
+      </div>
+      ${r.url?`<a class="card-link" href="${r.url}" target="_blank" onclick="event.stopPropagation()">↗ Abrir</a>`:''}
+    </div>
+  </div>`;
+}
+
+function cardListHTML(r) {
+  const tools = splitField(r.herramientas).slice(0,2).map(t=>`<span class="tag tool">${t}</span>`).join('');
+  return `<div class="list-card" onclick="openDetail(${r.id})">
+    <span class="type-badge ${typeClass(r.tipo)}" style="flex-shrink:0">${r.tipo}</span>
+    <div class="list-card-main">
+      <div class="list-card-title">${r.titulo}</div>
+      <div class="list-card-sub">
+        ${tools}
+        <span class="tag modal">${r.modalidad}</span>
+        ${r.idioma?`<span class="tag lang">${r.idioma}</span>`:''}
+      </div>
+    </div>
+    <div class="list-card-right">
+      <span style="color:var(--amber);font-size:0.65rem">${stars(r.valoracion)}</span>
+      ${r.url?`<a class="card-link" href="${r.url}" target="_blank" onclick="event.stopPropagation()">↗</a>`:''}
+    </div>
+  </div>`;
+}
+
+// ── VIEW ─────────────────────────────────────────────────
+function setView(v) {
+  currentView=v;
+  document.getElementById('vb-grid').classList.toggle('active',v==='grid');
+  document.getElementById('vb-list').classList.toggle('active',v==='list');
+  document.getElementById('cards-grid').classList.toggle('hidden',v!=='grid');
+  document.getElementById('cards-list').classList.toggle('hidden',v!=='list');
+}
+
+// ── DETAIL ───────────────────────────────────────────────
+function openDetail(id) {
+  const r = resources.find(x=>x.id==id); if(!r) return;
+  currentDetailId = id;
+  document.getElementById('d-type').textContent = r.tipo;
+  document.getElementById('d-type').className = `type-badge detail-type ${typeClass(r.tipo)}`;
+  document.getElementById('d-title').textContent = r.titulo;
+  document.getElementById('d-summary').textContent = r.resumen||'Sin resumen.';
+  document.getElementById('d-tools').innerHTML = splitField(r.herramientas).map(t=>`<span class="tag tool">${t}</span>`).join('')||'—';
+  document.getElementById('d-modal').innerHTML = `<span class="tag modal">${r.modalidad}${r.subtipo?' · '+r.subtipo:''}</span>`;
+  document.getElementById('d-level').innerHTML = `<span class="tag">${r.nivel||'—'}</span><span class="tag lang">${r.idioma||''}</span>`;
+  document.getElementById('d-stars').textContent = stars(r.valoracion);
+  document.getElementById('d-state').textContent = r.estado||'—';
+  document.getElementById('d-cost').textContent = r.requiere_pago||'—';
+  document.getElementById('d-dur').textContent = r.duracion||'—';
+  document.getElementById('d-author').textContent = r.autor_canal||'—';
+  document.getElementById('d-version').textContent = r.version_modelo||'—';
+  document.getElementById('d-tags').innerHTML = splitField(r.etiquetas).map(t=>`<span class="tag">${t}</span>`).join('')||'—';
+  const nw = document.getElementById('d-notes-wrap');
+  nw.style.display = r.notas_personales ? '' : 'none';
+  document.getElementById('d-notes').textContent = r.notas_personales||'';
+  const rw = document.getElementById('d-related-wrap');
+  rw.style.display = r.recurso_relacionado ? '' : 'none';
+  document.getElementById('d-related').textContent = r.recurso_relacionado||'';
+  const lnk = document.getElementById('d-link');
+  if(r.url){ lnk.href=r.url; lnk.style.display=''; } else { lnk.style.display='none'; }
+  document.getElementById('detail-overlay').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+
+function editCurrent() {
+  const r = resources.find(x=>x.id==currentDetailId); if(!r) return;
+  closeDetail();
+  openAddModal(r);
+}
+
+async function deleteCurrent() {
+  if(!confirm('¿Eliminar este recurso?')) return;
+  if(isConfigured) {
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'delete',id:currentDetailId})});
+  }
+  resources = resources.filter(x=>x.id!=currentDetailId);
+  closeDetail(); updateCounts(); buildToolFilters(); render();
+  showToast('Recurso eliminado','success');
+}
+
+// ── ADD / EDIT ────────────────────────────────────────────
+function openAddModal(r=null) {
+  document.getElementById('add-modal-title').textContent = r ? 'Editar recurso' : 'Agregar recurso';
+  document.getElementById('add-btn').textContent = r ? 'Guardar cambios' : 'Guardar recurso';
+  document.getElementById('f-id').value = r ? r.id : '';
+  document.getElementById('f-title').value = r ? r.titulo : '';
+  document.getElementById('f-summary').value = r ? r.resumen : '';
+  document.getElementById('f-url').value = r ? r.url : '';
+  document.getElementById('f-author').value = r ? r.autor_canal : '';
+  document.getElementById('f-type').value = r ? r.tipo : 'Video YouTube';
+  document.getElementById('f-modal').value = r ? r.modalidad : 'Texto';
+  updateSubtypes();
+  if(r && r.subtipo) document.getElementById('f-subtype').value = r.subtipo;
+  document.getElementById('f-tools').value = r ? r.herramientas : '';
+  document.getElementById('f-tags').value = r ? r.etiquetas : '';
+  document.getElementById('f-level').value = r ? r.nivel : 'Básico';
+  document.getElementById('f-lang').value = r ? r.idioma : 'ES';
+  document.getElementById('f-stars').value = r ? r.valoracion : 5;
+  document.getElementById('f-duration').value = r ? r.duracion : '';
+  document.getElementById('f-cost').value = r ? r.requiere_pago : 'Gratis';
+  document.getElementById('f-pubdate').value = r ? r.fecha_publicacion : '';
+  document.getElementById('f-aplicable').value = r ? r.aplicable_a : '';
+  document.getElementById('f-version').value = r ? r.version_modelo : '';
+  document.getElementById('f-related').value = r ? r.recurso_relacionado : '';
+  document.getElementById('f-notes').value = r ? r.notas_personales : '';
+  document.getElementById('f-featured').checked = r ? r.destacado==='SI' : false;
+  document.getElementById('f-prompt').checked = r ? r.prompt_incluido==='SI' : false;
+  document.getElementById('f-stepbystep').checked = r ? r.tiene_paso_a_paso==='SI' : false;
+  document.getElementById('f-state').value = r ? r.estado : 'Pendiente';
+  document.getElementById('add-overlay').classList.add('open');
+}
+function closeAddModal() { document.getElementById('add-overlay').classList.remove('open'); }
+
+function updateSubtypes() {
+  const modal = document.getElementById('f-modal').value;
+  const subs = SUBTYPES[modal]||[];
+  const row = document.getElementById('subtype-row');
+  row.style.display = subs.length ? '' : 'none';
+  document.getElementById('f-subtype').innerHTML = ['— ninguno —',...subs].map(s=>`<option>${s}</option>`).join('');
+}
+
+async function submitResource() {
+  const title = document.getElementById('f-title').value.trim();
+  if(!title){ showToast('El título es obligatorio','error'); return; }
+  const id = document.getElementById('f-id').value;
+  const subtypeVal = document.getElementById('f-subtype').value;
+
+  const r = {
+    id: id ? parseInt(id) : Date.now(),
+    titulo: title,
+    resumen: document.getElementById('f-summary').value.trim(),
+    url: document.getElementById('f-url').value.trim(),
+    autor_canal: document.getElementById('f-author').value.trim(),
+    tipo: document.getElementById('f-type').value,
+    modalidad: document.getElementById('f-modal').value,
+    subtipo: subtypeVal==='— ninguno —' ? '' : subtypeVal,
+    herramientas: document.getElementById('f-tools').value.trim(),
+    etiquetas: document.getElementById('f-tags').value.trim(),
+    nivel: document.getElementById('f-level').value,
+    idioma: document.getElementById('f-lang').value,
+    valoracion: document.getElementById('f-stars').value,
+    duracion: document.getElementById('f-duration').value.trim(),
+    requiere_pago: document.getElementById('f-cost').value,
+    fecha_publicacion: document.getElementById('f-pubdate').value,
+    aplicable_a: document.getElementById('f-aplicable').value.trim(),
+    version_modelo: document.getElementById('f-version').value.trim(),
+    recurso_relacionado: document.getElementById('f-related').value.trim(),
+    notas_personales: document.getElementById('f-notes').value.trim(),
+    destacado: document.getElementById('f-featured').checked ? 'SI' : '',
+    prompt_incluido: document.getElementById('f-prompt').checked ? 'SI' : '',
+    tiene_paso_a_paso: document.getElementById('f-stepbystep').checked ? 'SI' : '',
+    estado: document.getElementById('f-state').value,
+    fecha_agregado: id ? (resources.find(x=>x.id==id)||{}).fecha_agregado : new Date().toISOString().slice(0,10)
+  };
+
+  if(isConfigured) {
+    const action = id ? 'update' : 'add';
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action,resource:r})});
+  }
+
+  if(id) {
+    const idx = resources.findIndex(x=>x.id==id);
+    if(idx>-1) resources[idx]=r;
+  } else {
+    resources.unshift(r);
+  }
+
+  closeAddModal();
+  updateCounts(); buildToolFilters(); render();
+  showToast(id ? 'Recurso actualizado ✓' : 'Recurso agregado ✓','success');
+}
+
+// ── GLOSARIO ─────────────────────────────────────────────
+function showGlosario(term, event) {
+  event.stopPropagation();
+  const g = glosario.find(x=>x.termino===term);
+  if(!g){ showToast('Definición no encontrada en el glosario','error'); return; }
+  document.getElementById('g-term').textContent = g.termino;
+  document.getElementById('g-cat').textContent = `${g.categoria} · ${g.pertenece_a}`;
+  document.getElementById('g-def').textContent = g.definicion;
+  document.getElementById('g-example').textContent = '📌 Ejemplo: ' + g.ejemplo_uso;
+  document.getElementById('g-tools').innerHTML = splitField(g.herramientas_asociadas).map(t=>`<span class="tag tool">${t}</span>`).join('');
+  document.getElementById('glosario-overlay').classList.add('open');
+}
+function closeGlosario() { document.getElementById('glosario-overlay').classList.remove('open'); }
+
+// ── UTILS ─────────────────────────────────────────────────
+function overlayClose(e, id) { if(e.target.id===id) document.getElementById(id).classList.remove('open'); }
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── START ─────────────────────────────────────────────────
+updateSubtypes();
+init();
+</script>
+</body>
+</html>
